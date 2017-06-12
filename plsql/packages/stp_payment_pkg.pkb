@@ -1,4 +1,4 @@
-create or replace package body                                                             stp_payment_pkg as
+create or replace package body                                                                                                 stp_payment_pkg as
     
     --finds every field that was checked by the user and inserts/ updates the STP_PAYMENT_ITEMS table accordingly
     procedure process_checked_fields
@@ -55,7 +55,8 @@ create or replace package body                                                  
       
     begin
       update bsmart_data.STP_PAYMENT_ITEMS
-      set PAYMENT_STATUS = 2
+      set PAYMENT_STATUS = 2,
+      PAYMENT_CERT_NO = (select max(nvl(PAYMENT_CERT_NO,0)) + 1 from bsmart_data.STP_PAYMENT_ITEMS)
       where PAYMENT_STATUS = 1;
     end;
 
