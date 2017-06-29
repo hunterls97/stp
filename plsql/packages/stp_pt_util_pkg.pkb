@@ -21,7 +21,7 @@ PACKAGE BODY STP_PT_UTIL_PKG AS
   begin
       -- Load template
       select * into l_template
-      from stp_email_template where id = gc_email_noti_template_id;
+      from stp_email_template where id =  d;
 
       -- Load Extra Data
       select description into l_status
