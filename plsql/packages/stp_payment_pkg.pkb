@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 create or replace package body                                                                                                                                                             stp_payment_pkg as
+=======
+create or replace package body                                                                                                                                     stp_payment_pkg as
+>>>>>>> b1dc7e93e85fa59b54410bfe3248bd78aed66016
     
     --finds every field that was checked by the user and inserts/ updates the STP_PAYMENT_ITEMS table accordingly
     procedure process_checked_fields
@@ -58,6 +62,7 @@ create or replace package body                                                  
       where PAYMENT_STATUS = 1;
     end;
     
+<<<<<<< HEAD
     procedure create_deficiency_snapshot(p_year in number)
     as
       l_seq number;
@@ -155,12 +160,18 @@ create or replace package body                                                  
      and d.DEF is not null; 
     end;
     
+=======
+>>>>>>> b1dc7e93e85fa59b54410bfe3248bd78aed66016
     function AOP_payment_report return varchar2
     as
     l_return clob;
     begin
       l_return := q'[
+<<<<<<< HEAD
                   with status as (
+=======
+                with status as (
+>>>>>>> b1dc7e93e85fa59b54410bfe3248bd78aed66016
   select TREEID as "TREEID", READY_STATUS as "STATUS" from STP_DEFICIENCY_V STPD2
   where CREATEDATE = (select max(CREATEDATE) from STP_DEFICIENCY_V
   where TREEID = STPD2.TREEID)
@@ -184,6 +195,7 @@ contracts as (
     from STP_DEFICIENCY_V STPDV
     left join STP_CONTRACT_ITEM STPCI on to_number(STPDV.CONTRACTITEM) = STPCI.ITEM_NUM and STPDV.CONTRACTYEAR = STPCI.YEAR
     where STPDV.CONTRACTYEAR = :P0_YEAR
+<<<<<<< HEAD
 )/*,
 
 totals as (
@@ -198,6 +210,9 @@ select STPDV.STOCK_TYPE ||'-'|| STPDV.PLANT_TYPE ||'-'|| TTREE.SPECIES as "NAME"
                      else 0 end) = 1
     group by STPDV.STOCK_TYPE ||'-'|| STPDV.PLANT_TYPE ||'-'|| TTREE.SPECIES
 )*/
+=======
+)
+>>>>>>> b1dc7e93e85fa59b54410bfe3248bd78aed66016
 
 select null as "filename",
 cursor(
@@ -217,9 +232,13 @@ cursor(
                  join transd.fsttree@etrans TTREE on STPDV.TREEID = TTREE.TREEID
                  left join STP_PRICE stpp on STPDV.STOCK_TYPE_ID = stpp.STOCK_TYPE_ID and STPDV.PLANT_TYPE_ID = stpp.PLANT_TYPE_ID and TTREE.SPECIESID = stpp.SPECIES_ID
                  left join STP_PAYMENT_ITEMS STPPI on STPDV.TREEID = STPPI.TREEID
+<<<<<<< HEAD
                  where STPDV.CONTRACTYEAR = :P0_YEAR and 
                  to_number(STPDV.CONTRACTITEM) = cc.CONTRACT and 
                  STPDV.CREATEDATE in (select max(s2.CREATEDATE) from STP_DEFICIENCY_V s2 where s2.TREEID = STPDV.TREEID) and
+=======
+                 where STPDV.CONTRACTYEAR = :P0_YEAR and to_number(STPDV.CONTRACTITEM) = cc.CONTRACT and 
+>>>>>>> b1dc7e93e85fa59b54410bfe3248bd78aed66016
                      (case when (:P86_PRINT = 'c' and STPPI.PAYMENT_STATUS = 1 ) then 1
                      when (:P86_PRINT<>'c' and STPPI.PAYMENT_CERT_NO = to_number(:P86_PRINT)) then 1
                      else 0 end) = 1
@@ -234,7 +253,10 @@ cursor(
                    left join STP_PRICE stpp on STPDV.STOCK_TYPE_ID = stpp.STOCK_TYPE_ID and STPDV.PLANT_TYPE_ID = stpp.PLANT_TYPE_ID and TTREE.SPECIESID = stpp.SPECIES_ID
                    left join STP_PAYMENT_ITEMS STPPI on STPDV.TREEID = STPPI.TREEID
                    where STPDV.CONTRACTYEAR = :P0_YEAR and to_number(STPDV.CONTRACTITEM) = c.CONTRACT and 
+<<<<<<< HEAD
                    STPDV.CREATEDATE in (select max(s2.CREATEDATE) from STP_DEFICIENCY_V s2 where s2.TREEID = STPDV.TREEID) and
+=======
+>>>>>>> b1dc7e93e85fa59b54410bfe3248bd78aed66016
                      (case when (:P86_PRINT = 'c' and STPPI.PAYMENT_STATUS = 1 ) then 1
                      when (:P86_PRINT<>'c' and STPPI.PAYMENT_CERT_NO = to_number(:P86_PRINT)) then 1
                      else 0 end) = 1
@@ -253,7 +275,10 @@ cursor(
                  left join STP_PRICE stpp on STPDV.STOCK_TYPE_ID = stpp.STOCK_TYPE_ID and STPDV.PLANT_TYPE_ID = stpp.PLANT_TYPE_ID and TTREE.SPECIESID = stpp.SPECIES_ID
                  left join STP_PAYMENT_ITEMS STPPI on STPDV.TREEID = STPPI.TREEID
                  where STPDV.CONTRACTYEAR = :P0_YEAR and to_number(STPDV.CONTRACTITEM) = cc.CONTRACT and 
+<<<<<<< HEAD
                  STPDV.CREATEDATE in (select max(s2.CREATEDATE) from STP_DEFICIENCY_V s2 where s2.TREEID = STPDV.TREEID) and
+=======
+>>>>>>> b1dc7e93e85fa59b54410bfe3248bd78aed66016
                      (case when (:P86_PRINT = 'c' and STPPI.PAYMENT_STATUS = 1 ) then 1
                      when (:P86_PRINT<>'c' and STPPI.PAYMENT_CERT_NO = to_number(:P86_PRINT)) then 1
                      else 0 end) = 1 and cc.PROGRAM = cp.PROGRAM
@@ -269,13 +294,17 @@ cursor(
                  left join STP_PRICE stpp on STPDV.STOCK_TYPE_ID = stpp.STOCK_TYPE_ID and STPDV.PLANT_TYPE_ID = stpp.PLANT_TYPE_ID and TTREE.SPECIESID = stpp.SPECIES_ID
                  left join STP_PAYMENT_ITEMS STPPI on STPDV.TREEID = STPPI.TREEID
                  where STPDV.CONTRACTYEAR = :P0_YEAR and to_number(STPDV.CONTRACTITEM) = cp.CONTRACT  and 
+<<<<<<< HEAD
                  STPDV.CREATEDATE in (select max(s2.CREATEDATE) from STP_DEFICIENCY_V s2 where s2.TREEID = STPDV.TREEID) and
+=======
+>>>>>>> b1dc7e93e85fa59b54410bfe3248bd78aed66016
                      (case when (:P86_PRINT = 'c' and STPPI.PAYMENT_STATUS = 1 ) then 1
                      when (:P86_PRINT<>'c' and STPPI.PAYMENT_CERT_NO = to_number(:P86_PRINT)) then 1
                      else 0 end) = 1 
                  group by STPDV.STOCK_TYPE, STPDV.PLANT_TYPE, TTREE.SPECIES, stpp.unit_price
                  ) and cp.PROGRAM is not null --and cp.PROGRAM = top.PROGRAM
     group by cp.program  
+<<<<<<< HEAD
   ) "PROGRAMS",
   
   cursor(  
@@ -303,6 +332,9 @@ cursor(
     group by STPDV.STOCK_TYPE ||'-'|| STPDV.PLANT_TYPE ||'-'|| TTREE.SPECIES
   ) tot) as "GRAND" --again, have to write as subquery due to oracle bug
   
+=======
+  ) "PROGRAMS"
+>>>>>>> b1dc7e93e85fa59b54410bfe3248bd78aed66016
   from contracts top
   where top.program is not null and exists(select distinct 
                  STPDV.STOCK_TYPE ||'-'|| STPDV.PLANT_TYPE ||'-'|| TTREE.SPECIES as "ITEM"
@@ -311,7 +343,10 @@ cursor(
                  left join STP_PRICE stpp on STPDV.STOCK_TYPE_ID = stpp.STOCK_TYPE_ID and STPDV.PLANT_TYPE_ID = stpp.PLANT_TYPE_ID and TTREE.SPECIESID = stpp.SPECIES_ID
                  left join STP_PAYMENT_ITEMS STPPI on STPDV.TREEID = STPPI.TREEID
                  where STPDV.CONTRACTYEAR = :P0_YEAR and to_number(STPDV.CONTRACTITEM) = top.CONTRACT  and 
+<<<<<<< HEAD
                  STPDV.CREATEDATE in (select max(s2.CREATEDATE) from STP_DEFICIENCY_V s2 where s2.TREEID = STPDV.TREEID) and
+=======
+>>>>>>> b1dc7e93e85fa59b54410bfe3248bd78aed66016
                      (case when (:P86_PRINT = 'c' and STPPI.PAYMENT_STATUS = 1 ) then 1
                      when (:P86_PRINT<>'c' and STPPI.PAYMENT_CERT_NO = to_number(:P86_PRINT)) then 1
                      else 0 end) = 1 
