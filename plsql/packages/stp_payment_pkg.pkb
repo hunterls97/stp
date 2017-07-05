@@ -1,8 +1,4 @@
-<<<<<<< HEAD
-create or replace package body                                                                                                                                                             stp_payment_pkg as
-=======
-create or replace package body                                                                                                                                     stp_payment_pkg as
->>>>>>> b1dc7e93e85fa59b54410bfe3248bd78aed66016
+create or replace package body                                                                                                                                                                                                                                                                                                                                     stp_payment_pkg as
     
     --finds every field that was checked by the user and inserts/ updates the STP_PAYMENT_ITEMS table accordingly
     procedure process_checked_fields
@@ -62,7 +58,6 @@ create or replace package body                                                  
       where PAYMENT_STATUS = 1;
     end;
     
-<<<<<<< HEAD
     procedure create_deficiency_snapshot(p_year in number)
     as
       l_seq number;
@@ -160,18 +155,20 @@ create or replace package body                                                  
      and d.DEF is not null; 
     end;
     
-=======
->>>>>>> b1dc7e93e85fa59b54410bfe3248bd78aed66016
+    procedure delete_snapshot(p_snap in number)
+    as
+    begin
+      delete from STP_DEFICIENCY_LIST_SNAPSHOTS 
+      where SEQ_ID = p_snap;
+      commit;
+    end;
+    
     function AOP_payment_report return varchar2
     as
     l_return clob;
     begin
       l_return := q'[
-<<<<<<< HEAD
                   with status as (
-=======
-                with status as (
->>>>>>> b1dc7e93e85fa59b54410bfe3248bd78aed66016
   select TREEID as "TREEID", READY_STATUS as "STATUS" from STP_DEFICIENCY_V STPD2
   where CREATEDATE = (select max(CREATEDATE) from STP_DEFICIENCY_V
   where TREEID = STPD2.TREEID)
@@ -195,7 +192,6 @@ contracts as (
     from STP_DEFICIENCY_V STPDV
     left join STP_CONTRACT_ITEM STPCI on to_number(STPDV.CONTRACTITEM) = STPCI.ITEM_NUM and STPDV.CONTRACTYEAR = STPCI.YEAR
     where STPDV.CONTRACTYEAR = :P0_YEAR
-<<<<<<< HEAD
 )/*,
 
 totals as (
@@ -210,9 +206,6 @@ select STPDV.STOCK_TYPE ||'-'|| STPDV.PLANT_TYPE ||'-'|| TTREE.SPECIES as "NAME"
                      else 0 end) = 1
     group by STPDV.STOCK_TYPE ||'-'|| STPDV.PLANT_TYPE ||'-'|| TTREE.SPECIES
 )*/
-=======
-)
->>>>>>> b1dc7e93e85fa59b54410bfe3248bd78aed66016
 
 select null as "filename",
 cursor(
@@ -232,13 +225,9 @@ cursor(
                  join transd.fsttree@etrans TTREE on STPDV.TREEID = TTREE.TREEID
                  left join STP_PRICE stpp on STPDV.STOCK_TYPE_ID = stpp.STOCK_TYPE_ID and STPDV.PLANT_TYPE_ID = stpp.PLANT_TYPE_ID and TTREE.SPECIESID = stpp.SPECIES_ID
                  left join STP_PAYMENT_ITEMS STPPI on STPDV.TREEID = STPPI.TREEID
-<<<<<<< HEAD
                  where STPDV.CONTRACTYEAR = :P0_YEAR and 
                  to_number(STPDV.CONTRACTITEM) = cc.CONTRACT and 
                  STPDV.CREATEDATE in (select max(s2.CREATEDATE) from STP_DEFICIENCY_V s2 where s2.TREEID = STPDV.TREEID) and
-=======
-                 where STPDV.CONTRACTYEAR = :P0_YEAR and to_number(STPDV.CONTRACTITEM) = cc.CONTRACT and 
->>>>>>> b1dc7e93e85fa59b54410bfe3248bd78aed66016
                      (case when (:P86_PRINT = 'c' and STPPI.PAYMENT_STATUS = 1 ) then 1
                      when (:P86_PRINT<>'c' and STPPI.PAYMENT_CERT_NO = to_number(:P86_PRINT)) then 1
                      else 0 end) = 1
@@ -253,10 +242,7 @@ cursor(
                    left join STP_PRICE stpp on STPDV.STOCK_TYPE_ID = stpp.STOCK_TYPE_ID and STPDV.PLANT_TYPE_ID = stpp.PLANT_TYPE_ID and TTREE.SPECIESID = stpp.SPECIES_ID
                    left join STP_PAYMENT_ITEMS STPPI on STPDV.TREEID = STPPI.TREEID
                    where STPDV.CONTRACTYEAR = :P0_YEAR and to_number(STPDV.CONTRACTITEM) = c.CONTRACT and 
-<<<<<<< HEAD
                    STPDV.CREATEDATE in (select max(s2.CREATEDATE) from STP_DEFICIENCY_V s2 where s2.TREEID = STPDV.TREEID) and
-=======
->>>>>>> b1dc7e93e85fa59b54410bfe3248bd78aed66016
                      (case when (:P86_PRINT = 'c' and STPPI.PAYMENT_STATUS = 1 ) then 1
                      when (:P86_PRINT<>'c' and STPPI.PAYMENT_CERT_NO = to_number(:P86_PRINT)) then 1
                      else 0 end) = 1
@@ -275,10 +261,7 @@ cursor(
                  left join STP_PRICE stpp on STPDV.STOCK_TYPE_ID = stpp.STOCK_TYPE_ID and STPDV.PLANT_TYPE_ID = stpp.PLANT_TYPE_ID and TTREE.SPECIESID = stpp.SPECIES_ID
                  left join STP_PAYMENT_ITEMS STPPI on STPDV.TREEID = STPPI.TREEID
                  where STPDV.CONTRACTYEAR = :P0_YEAR and to_number(STPDV.CONTRACTITEM) = cc.CONTRACT and 
-<<<<<<< HEAD
                  STPDV.CREATEDATE in (select max(s2.CREATEDATE) from STP_DEFICIENCY_V s2 where s2.TREEID = STPDV.TREEID) and
-=======
->>>>>>> b1dc7e93e85fa59b54410bfe3248bd78aed66016
                      (case when (:P86_PRINT = 'c' and STPPI.PAYMENT_STATUS = 1 ) then 1
                      when (:P86_PRINT<>'c' and STPPI.PAYMENT_CERT_NO = to_number(:P86_PRINT)) then 1
                      else 0 end) = 1 and cc.PROGRAM = cp.PROGRAM
@@ -294,17 +277,13 @@ cursor(
                  left join STP_PRICE stpp on STPDV.STOCK_TYPE_ID = stpp.STOCK_TYPE_ID and STPDV.PLANT_TYPE_ID = stpp.PLANT_TYPE_ID and TTREE.SPECIESID = stpp.SPECIES_ID
                  left join STP_PAYMENT_ITEMS STPPI on STPDV.TREEID = STPPI.TREEID
                  where STPDV.CONTRACTYEAR = :P0_YEAR and to_number(STPDV.CONTRACTITEM) = cp.CONTRACT  and 
-<<<<<<< HEAD
                  STPDV.CREATEDATE in (select max(s2.CREATEDATE) from STP_DEFICIENCY_V s2 where s2.TREEID = STPDV.TREEID) and
-=======
->>>>>>> b1dc7e93e85fa59b54410bfe3248bd78aed66016
                      (case when (:P86_PRINT = 'c' and STPPI.PAYMENT_STATUS = 1 ) then 1
                      when (:P86_PRINT<>'c' and STPPI.PAYMENT_CERT_NO = to_number(:P86_PRINT)) then 1
                      else 0 end) = 1 
                  group by STPDV.STOCK_TYPE, STPDV.PLANT_TYPE, TTREE.SPECIES, stpp.unit_price
                  ) and cp.PROGRAM is not null --and cp.PROGRAM = top.PROGRAM
     group by cp.program  
-<<<<<<< HEAD
   ) "PROGRAMS",
   
   cursor(  
@@ -332,9 +311,6 @@ cursor(
     group by STPDV.STOCK_TYPE ||'-'|| STPDV.PLANT_TYPE ||'-'|| TTREE.SPECIES
   ) tot) as "GRAND" --again, have to write as subquery due to oracle bug
   
-=======
-  ) "PROGRAMS"
->>>>>>> b1dc7e93e85fa59b54410bfe3248bd78aed66016
   from contracts top
   where top.program is not null and exists(select distinct 
                  STPDV.STOCK_TYPE ||'-'|| STPDV.PLANT_TYPE ||'-'|| TTREE.SPECIES as "ITEM"
@@ -343,10 +319,7 @@ cursor(
                  left join STP_PRICE stpp on STPDV.STOCK_TYPE_ID = stpp.STOCK_TYPE_ID and STPDV.PLANT_TYPE_ID = stpp.PLANT_TYPE_ID and TTREE.SPECIESID = stpp.SPECIES_ID
                  left join STP_PAYMENT_ITEMS STPPI on STPDV.TREEID = STPPI.TREEID
                  where STPDV.CONTRACTYEAR = :P0_YEAR and to_number(STPDV.CONTRACTITEM) = top.CONTRACT  and 
-<<<<<<< HEAD
                  STPDV.CREATEDATE in (select max(s2.CREATEDATE) from STP_DEFICIENCY_V s2 where s2.TREEID = STPDV.TREEID) and
-=======
->>>>>>> b1dc7e93e85fa59b54410bfe3248bd78aed66016
                      (case when (:P86_PRINT = 'c' and STPPI.PAYMENT_STATUS = 1 ) then 1
                      when (:P86_PRINT<>'c' and STPPI.PAYMENT_CERT_NO = to_number(:P86_PRINT)) then 1
                      else 0 end) = 1 
@@ -356,6 +329,183 @@ cursor(
 ) "data"
 from dual
       ]';
+      
+      return l_return;
+    end;
+    
+    function AOP_deficiency_list_report(p_snap in number) return varchar2
+    as
+      l_return clob;
+    begin
+      if p_snap = 0 then
+        l_return := q'[
+          with def as (
+    select 
+       STPDV.TREEID as "TREEID",
+       case
+       when STPDV.CROWNDIEBACK = 1 then 'Crown dieback (<75% crown density)'
+       when STPDV.CROWNINSECTDISEASE = 1 then 'Crown disease/insect'
+       when STPDV.EPICORMICBRANCHING = 1 then 'Epicormic branching'
+       when STPDV.BRANCHINGSTRUCTURE = 1 then 'Poor branching structure'
+       when STPDV.ROOTBALLSIZE = 1 then 'Root ball size too small'
+       when STPDV.ROOTBALLLOOSE = 1 then 'Stem loose in root ball'
+       when STPDV.GIRDLINGROOTS = 1 then 'Root ball and/or roots damage'
+       when STPDV.STEMINSECTDISEASE = 1 then 'Stem insect/disease'
+       when STPDV.STEMTISSUENECROSIS = 1 then 'Stem tissue necrosis'
+       when STPDV.STEMSCARS = 1 then 'Stem scars'
+       when STPDV.GIRDLEDSTEM = 1 then 'Girdled stem'
+       -- all above need tree replacement
+       when STPDV.PLANTINGHOLESIZE = 1 then 'Planting hole incorrect size'
+       when STPDV.BACKFILL = 1 then 'Insufficient soil tamping / air pockets present'
+       when STPDV.PLANTINGLOW = 1 then 'Root ball planted too deep'
+       when STPDV.PLANTINGHIGH = 1 then 'Root ball planted too high'
+       when STPDV.SOILRETENTIONRING = 1 then 'Deficient soil water retention ring'
+       when STPDV.BURLAPWIREROPE = 1 then 'Exposed burlap, wire or rope not removed'
+       when STPDV.BEDPREPARATIONDIAMETER = 1 then 'Deficient diameter of bed preparation area'
+       when STPDV.BEDPREPARATIONSOD = 1 then 'Sod remains on site/within bed preparation area'
+       when STPDV.BEDPREPARATIONCULTIVATION = 1 then 'Deficient soil cultivation'
+       when STPDV.BEDPREPARATIONCULTIVATIONDEPTH = 1 then 'Deficient soil cultivation depth'
+       when STPDV.MULCHDEPTH = 1 then 'Deficient depth of mulch'
+       when STPDV.MULCHDIAMETER = 1 then 'Deficient mulch diameter'
+       when STPDV.MULCHRING = 1 then 'Deficient mulch retention ring'
+       when STPDV.MULCHSTEM = 1 then 'Mulch too close to the stem'
+       when STPDV.STEMCROWNROPE = 1 then 'Stem/crown rope and/or ties present'
+       when STPDV.TREEGATORBAG = 1 then 'Missing gator bag'
+       when STPDV.TREEGUARD = 1 then 'Missing tree guard'
+       when STPDV.PRUNING = 1 then 'Crown requires pruning'
+       when STPDV.STAKING = 1 then 'Staking required'
+       end as "DEF",
+    
+       case
+       when STPDV.CROWNDIEBACK = 1 or
+       STPDV.CROWNINSECTDISEASE = 1 or
+       STPDV.EPICORMICBRANCHING = 1 or
+       STPDV.BRANCHINGSTRUCTURE = 1 or
+       STPDV.ROOTBALLSIZE = 1  or
+       STPDV.ROOTBALLLOOSE = 1 or
+       STPDV.GIRDLINGROOTS = 1 or
+       STPDV.STEMINSECTDISEASE = 1 or
+       STPDV.STEMTISSUENECROSIS = 1 or
+       STPDV.STEMSCARS = 1 or
+       STPDV.GIRDLEDSTEM = 1 then 'Replace Tree'
+       -- all above need tree replacement
+       when STPDV.PLANTINGHOLESIZE = 1 then 'Increase diameter of planting hole'
+       when STPDV.BACKFILL = 1 then 'Tamp backfill to eliminate air pockets'
+       when STPDV.PLANTINGLOW = 1 then 'Raise tree so root collar 5 - 10 cm above grade'
+       when STPDV.PLANTINGHIGH = 1 then 'Lower tree so root collar 5 - 10 cm above grade'
+       when STPDV.SOILRETENTIONRING = 1 then 'Add/correct soil water retention ring'
+       when STPDV.BURLAPWIREROPE = 1 then 'Remove burlap, wire and/or rope'
+       when STPDV.BEDPREPARATIONDIAMETER = 1 then 'Increase diameter of bed preparation area'
+       when STPDV.BEDPREPARATIONSOD = 1 then 'Remove sod from bed preparation area'
+       when STPDV.BEDPREPARATIONCULTIVATION = 1 then 'Cultivate bed preparation area'
+       when STPDV.BEDPREPARATIONCULTIVATIONDEPTH = 1 then 'Increase depth of cultivation'
+       when STPDV.MULCHDEPTH = 1 then 'Increase depth of mulch'
+       when STPDV.MULCHDIAMETER = 1 then 'Increase diameter of mulch'
+       when STPDV.MULCHRING = 1 then 'Add/correct mulch water retention ring'
+       when STPDV.MULCHSTEM = 1 then 'Move mulch a minimum of 5 cm away from stem'
+       when STPDV.STEMCROWNROPE = 1 then 'Remove rope and/or ties from tree crown'
+       when STPDV.TREEGATORBAG = 1 then 'Install TreeGator bag'
+       when STPDV.TREEGUARD = 1 then 'Install tree guard'
+       when STPDV.PRUNING = 1 then 'Prune crown to remove dead, diseased or broken branches'
+       when STPDV.STAKING = 1 then 'Stake leaning or loose tree, correct inproper staking'
+       end as "REP"
+       from STP_DEFICIENCY_V STPDV 
+)
+
+select null as "filename",
+cursor(
+  select 
+  cursor( 
+    select TTREE.MUNICIPALITY as "MUN", 
+    :P0_YEAR ||' - '|| to_char(STPDV.CONTRACTITEM, '000') as "CON", 
+    TTREE.ROADSIDE as "RD",
+    cursor(
+       select distinct s.TREEID as "TID",
+       s.TAGNUMBER as "TNO",
+       s.STOCK_TYPE ||'-'|| s.PLANT_TYPE ||'-'|| t.SPECIES as "ITEM",
+       t.CURRENTHEALTH as "HEL",
+       d.DEF as "DEF", 
+       d.REP as "REP"
+       from STP_DEFICIENCY_V s
+       join def d on d.TREEID = s.TREEID
+       join STP_TREE_LOCATION_V t on s.TREEID = t.TREEID
+       where s.CONTRACTYEAR = :P0_YEAR and d.DEF is not null
+       and convert(t.MUNICIPALITY, 'AL16UTF16', 'AL32UTF8') = TTREE.MUNICIPALITY
+       and convert(s.CONTRACTITEM, 'AL16UTF16', 'AL32UTF8') = STPDV.CONTRACTITEM
+       and convert(t.ROADSIDE, 'AL16UTF16', 'AL32UTF8') = TTREE.ROADSIDE
+       order by s.TREEID asc
+    ) "ITEMS"
+    from STP_DEFICIENCY_V STPDV 
+    join def d on d.TREEID = STPDV.TREEID
+    join STP_TREE_LOCATION_V TTREE on STPDV.TREEID = TTREE.TREEID
+    where exists(
+      select distinct s.TREEID as "TID",
+       s.TAGNUMBER as "TNO",
+       s.STOCK_TYPE ||'-'|| s.PLANT_TYPE ||'-'|| t.SPECIES as "ITEM",
+       t.CURRENTHEALTH as "HEL",
+       d.DEF as "DEF", 
+       d.REP as "REP"
+       from STP_DEFICIENCY_V s
+       join def d on d.TREEID = s.TREEID
+       join STP_TREE_LOCATION_V t on s.TREEID = t.TREEID
+       where s.CONTRACTYEAR = :P0_YEAR and d.DEF is not null
+       and t.MUNICIPALITY = TTREE.MUNICIPALITY
+       and s.CONTRACTITEM = STPDV.CONTRACTITEM
+       and t.ROADSIDE = TTREE.ROADSIDE)
+    group by TTREE.MUNICIPALITY, STPDV.CONTRACTITEM, TTREE.ROADSIDE
+    order by TTREE.MUNICIPALITY, to_number(STPDV.CONTRACTITEM), TTREE.ROADSIDE
+  ) "OUTER"
+  from dual
+) "data"
+from dual  
+        ]';
+        
+        else
+        l_return := q'[
+          select null as "filename",
+cursor(
+  select 
+  cursor( 
+    select s.MUNICIPALITY as "MUN", 
+    :P0_YEAR ||' - '|| to_char(s.CONTRACTITEM, '000') as "CON", 
+    s.ROADSIDE as "RD",
+    cursor(
+       select distinct ss.TREEID as "TID",
+       ss.TAGNUMBER as "TNO",
+       ss.ITEM as "ITEM",
+       ss.HEALTH as "HEL",
+       ss.DEF as "DEF", 
+       ss.REP as "REP"
+       from STP_DEFICIENCY_LIST_SNAPSHOTS ss 
+       where s.CURRENTYEAR = :P0_YEAR 
+       and ss.MUNICIPALITY= s.MUNICIPALITY
+       and ss.CONTRACTITEM = s.CONTRACTITEM
+       and ss.ROADSIDE = s.ROADSIDE
+       order by ss.TREEID asc
+    ) "ITEMS"
+    from STP_DEFICIENCY_LIST_SNAPSHOTS s 
+    where exists(
+      select distinct ss.TREEID as "TID",
+       ss.TAGNUMBER as "TNO",
+       ss.ITEM as "ITEM",
+       ss.HEALTH as "HEL",
+       ss.DEF as "DEF", 
+       ss.REP as "REP"
+       from STP_DEFICIENCY_LIST_SNAPSHOTS ss 
+       where s.CURRENTYEAR = :P0_YEAR
+       and ss.MUNICIPALITY = s.MUNICIPALITY
+       and ss.CONTRACTITEM = s.CONTRACTITEM
+       and ss.ROADSIDE = s.ROADSIDE)
+       and s.SEQ_ID = ]' || p_snap || q'[
+     group by s.MUNICIPALITY, s.CONTRACTITEM, s.ROADSIDE, s.CURRENTYEAR
+    order by 1,2,3
+  ) "OUTER"
+  from dual
+) "data"
+from dual 
+        ]';
+        -- TODO: select * from stp_deficiency_list_snapshots where seq_id = p_snap 
+      end if;
       
       return l_return;
     end;
