@@ -1,5 +1,5 @@
-create or replace package body             stp_util_pkg as
-
+create or replace package body                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 stp_util_pkg as
+ 
     FUNCTION GET_CONTRACT_NUM(P_YEAR IN NUMBER) RETURN VARCHAR2
     AS
       l_result varchar2(100);
@@ -30,13 +30,13 @@ create or replace package body             stp_util_pkg as
     END;
  
 
-  /* Send Locking Notification */
+  /* Send Locking Notification 
   PROCEDURE send_lock_notification( p_year IN NUMBER, p_comments IN VARCHAR2 DEFAULT NULL)
   AS
     cursor c_creator is
     SELECT DISTINCT CREATED_BY AS creator FROM stp_contract_item WHERE YEAR = p_year;
 
-    cursor c_items (p_creator VARCHAR2 ) is
+    cursor c_items (p_creator VARCHAR2 ) is 
     select ID, contract_item_num
     from stp_contract_item
     where CREATED_BY = p_creator and STATUS_ID = 2;
@@ -68,17 +68,15 @@ create or replace package body             stp_util_pkg as
                           l_body);
     END LOOP; 
   END;
+  */
  
   PROCEDURE LOAD_COMMENT_COLLECTION( P_ITEM_ID IN NUMBER)
   AS
   BEGIN
 
-    /* Truncate Comment Collection. */
-    if APEX_COLLECTION.COLLECTION_EXISTS (COMMENT_COLLECTION_NAME) then
-        APEX_COLLECTION.DELETE_COLLECTION (COMMENT_COLLECTION_NAME);
-    end if;
     
-    APEX_COLLECTION.CREATE_COLLECTION(COMMENT_COLLECTION_NAME);
+    APEX_COLLECTION.CREATE_OR_TRUNCATE_COLLECTION (COMMENT_COLLECTION_NAME);
+    
     
     for rec in (SELECT
                 C."ID" "ID",
@@ -130,17 +128,19 @@ create or replace package body             stp_util_pkg as
 AS
     l_result varchar2(128);
   BEGIN
-
+    
+    
     CASE P_TYPE
     WHEN STP_CONSTANT_PKG.GC_T_ACTIVITY_TYPE    THEN  SELECT ACTIVITY INTO l_result FROM bsmart_data.STP_ACTIVITIES WHERE id = P_ID;
-    WHEN STP_CONSTANT_PKG.GC_T_STOCK_TYPE       THEN  SELECT TYPE_NAME INTO l_result FROM bsmart_data.stp_stock_type WHERE id = P_ID;
-    WHEN STP_CONSTANT_PKG.GC_T_PLANT_TYPE       THEN  SELECT PLANT_TYPE INTO l_result FROM bsmart_data.stp_plant_type WHERE id = P_ID;
-    WHEN STP_CONSTANT_PKG.GC_T_SPECIES          THEN  SELECT SPECIES INTO l_result FROM bsmart_data.stp_species WHERE id = P_ID;
-    WHEN STP_CONSTANT_PKG.GC_T_STUMP_SIZE       THEN  SELECT STUMP_SIZE INTO l_result FROM bsmart_data.stp_stump_size WHERE id = P_ID;
-    WHEN STP_CONSTANT_PKG.GC_T_TRANSP_DIS       THEN  SELECT DISTANCE INTO l_result FROM bsmart_data.stp_transp_dis WHERE id = P_ID;
+    WHEN STP_CONSTANT_PKG.GC_T_STOCK_TYPE       THEN  SELECT CODE_NAME INTO l_result FROM bsmart_data.stp_stocktype_lk WHERE CODE_VALUE = P_ID;
+    WHEN STP_CONSTANT_PKG.GC_T_PLANT_TYPE       THEN  SELECT CODE_NAME INTO l_result FROM bsmart_data.stp_plantsize_lk WHERE CODE_VALUE = P_ID;
+    WHEN STP_CONSTANT_PKG.GC_T_SPECIES          THEN  SELECT SPECIES INTO l_result FROM bsmart_data.STP_SPECIES_LK WHERE SPECIESID = P_ID;
+    WHEN STP_CONSTANT_PKG.GC_T_STUMP_SIZE       THEN  SELECT CODE_NAME INTO l_result FROM bsmart_data.stp_stumping_lk WHERE CODE_VALUE = P_ID;
+    WHEN STP_CONSTANT_PKG.GC_T_TRANSP_DIS       THEN  SELECT CODE_NAME INTO l_result FROM bsmart_data.stp_plantsize_lk WHERE CODE_VALUE = P_ID;
     WHEN STP_CONSTANT_PKG.GC_T_MARK_TYPE        THEN  SELECT MARK_TYPE  INTO l_result FROM bsmart_data.stp_mark_type WHERE id = P_ID;
     WHEN STP_CONSTANT_PKG.GC_T_MARKING_LOCATION THEN  SELECT MARKING_LOCATION INTO l_result FROM bsmart_data.stp_marking_location WHERE id = P_ID;
-    END CASE;
+    END CASE; 
+    
     
     RETURN l_result;
 
@@ -149,5 +149,69 @@ AS
     RETURN NULL;
   END;
   
-
+  
+  FUNCTION GET_DOMAIN_JSON (P_LAYERID IN NUMBER) RETURN VARCHAR2
+  AS
+    l_http_request    UTL_HTTP.req;
+    l_http_response   UTL_HTTP.resp;
+    l_response_text   VARCHAR2 (32000);
+    BEGIN
+    -- preparing request
+    l_http_request :=
+      UTL_HTTP.begin_request ('http://ykr-geo-cw4/arcgis/rest/services/Cityworks/CWForestry_etransprd/MapServer/' || TO_CHAR(P_LAYERID) ||'?f=json',
+                              'GET',
+                              'HTTP/1.1');
+    
+    l_http_response := UTL_HTTP.get_response (l_http_request);
+    
+    UTL_HTTP.read_text (l_http_response, l_response_text);
+    
+    UTL_HTTP.end_response (l_http_response);
+    RETURN  l_response_text;
+    
+    EXCEPTION
+    WHEN UTL_HTTP.end_of_body
+    THEN
+      UTL_HTTP.end_response (l_http_response);
+      RETURN NULL;
+   END;
+   
+   /**********************************************************************
+   /*
+   /* @function: GET_AOP_QUERY
+   /*
+   /* @description: Gets the aop query based on a given id
+   /*
+   /* @type P_ID In number - The ID of the query
+   /*
+   /* @rtype clob - the returned query
+   /**********************************************************************/ 
+   FUNCTION GET_AOP_QUERY(P_ID IN NUMBER) RETURN VARCHAR2
+   AS
+    l_return clob;
+    l_cont number := 0;
+   BEGIN
+   sys.dbms_output.enable;
+    select aop.QUERY into l_return from STP_AOP_FACTORY aop where aop.ID = P_ID;
+  
+    return l_return;
+   END;
+   
+   
+   /* Procedure for daily scheduled job to update materialized view. */
+   PROCEDURE UPDATE_MV
+   AS
+   BEGIN
+    DBMS_MVIEW.REFRESH('BSMART_DATA.STP_TAGCOLOR_LK');
+    DBMS_MVIEW.REFRESH('BSMART_DATA.STP_STOCKTYPE_LK');
+    DBMS_MVIEW.REFRESH('BSMART_DATA.STP_SPECIES_LK');
+    DBMS_MVIEW.REFRESH('BSMART_DATA.STP_TREEHEALTH_LK');
+    DBMS_MVIEW.REFRESH('BSMART_DATA.STP_TREEHEIGHT_LK');
+    DBMS_MVIEW.REFRESH('BSMART_DATA.STP_CONTRACTOPERATION_LK');
+    DBMS_MVIEW.REFRESH('BSMART_DATA.STP_DEFICIENCY_STATUS_LK');
+    DBMS_MVIEW.REFRESH('BSMART_DATA.STP_PLANTSIZE_LK');
+    DBMS_MVIEW.REFRESH('BSMART_DATA.STP_WARRANTYINSPECTIONTYPE_LK');
+    DBMS_MVIEW.REFRESH('BSMART_DATA.STP_STUMPING_LK');
+   END;
+   
 end stp_util_pkg;

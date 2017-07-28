@@ -1,6 +1,15 @@
-create or replace package body                                                                                                                                                                                                                                                                                                                                     stp_payment_pkg as
+create or replace package body                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     stp_payment_pkg as
     
-    --finds every field that was checked by the user and inserts/ updates the STP_PAYMENT_ITEMS table accordingly
+    
+    /**********************************************************************
+    /*
+    /* @procedire: process_checked_fields
+    /*
+    /* @description: finds every field that was checked by the user and 
+    /* inserts/ updates the STP_PAYMENT_ITEMS table accordingly
+    /*
+    /**********************************************************************/ 
+
     procedure process_checked_fields
     as
       l_exist varchar2(32000);
@@ -40,14 +49,17 @@ create or replace package body                                                  
             
         end loop;
         
-
-        --apex_debug.log_dbms_output; 
-        
-        --exception when NO_DATA_FOUND then
-           -- l_exist := '--';
     end;
     
-    --When the pay button is pressed, sets all the items to paid where they were previously set to assign for payment
+    /**********************************************************************
+    /*
+    /* @procedure: process_payment
+    /*
+    /* @description: When the pay button is pressed, sets all the items to 
+    /* paid where they were previously set to assign for payment
+    /*
+    /**********************************************************************/ 
+    
     procedure process_payment
     as
       
@@ -57,6 +69,16 @@ create or replace package body                                                  
       PAYMENT_CERT_NO = (select max(nvl(PAYMENT_CERT_NO,0)) + 1 from bsmart_data.STP_PAYMENT_ITEMS)
       where PAYMENT_STATUS = 1;
     end;
+    
+    /**********************************************************************
+    /*
+    /* @procedure: create_deficiency_snapshot
+    /*
+    /* @description: creates a snapshot in time of the current deficiencies
+    /*
+    /* @type p_year In number - the year the snapshot was created for
+    /*
+    /**********************************************************************/ 
     
     procedure create_deficiency_snapshot(p_year in number)
     as
@@ -70,90 +92,58 @@ create or replace package body                                                  
         p_year,
         STPDV.TREEID,
         STPDV.TAGNUMBER,
-        STPDV.STOCK_TYPE ||'-'|| STPDV.PLANT_TYPE ||'-'|| TTREE.SPECIES,
-        TTREE.CURRENTTREEHEALTH,
+        d.ITEM,
+        d.HEL,
         d.DEF,
-        d.REP,
-        to_number(STPDV.CONTRACTITEM),
-        TTREE.MUNICIPALITY,
-        TTREE.SIDEOFSTREET
+        'repair',--d.REP,
+        d.CON,
+        d.MUN,
+        d.RD
      from STP_DEFICIENCY_V STPDV
-     join transd.fsttree@etrans TTREE on STPDV.TREEID = TTREE.TREEID
      join (
-      select 
-       STPDV.TREEID as "TREEID",
-       case
-       when STPDV.CROWNDIEBACK = 1 then 'Crown dieback (<75% crown density)'
-       when STPDV.CROWNINSECTDISEASE = 1 then 'Crown disease/insect'
-       when STPDV.EPICORMICBRANCHING = 1 then 'Epicormic branching'
-       when STPDV.BRANCHINGSTRUCTURE = 1 then 'Poor branching structure'
-       when STPDV.ROOTBALLSIZE = 1 then 'Root ball size too small'
-       when STPDV.ROOTBALLLOOSE = 1 then 'Stem loose in root ball'
-       when STPDV.GIRDLINGROOTS = 1 then 'Root ball and/or roots damage'
-       when STPDV.STEMINSECTDISEASE = 1 then 'Stem insect/disease'
-       when STPDV.STEMTISSUENECROSIS = 1 then 'Stem tissue necrosis'
-       when STPDV.STEMSCARS = 1 then 'Stem scars'
-       when STPDV.GIRDLEDSTEM = 1 then 'Girdled stem'
-       -- all above need tree replacement
-       when STPDV.PLANTINGHOLESIZE = 1 then 'Planting hole incorrect size'
-       when STPDV.BACKFILL = 1 then 'Insufficient soil tamping / air pockets present'
-       when STPDV.PLANTINGLOW = 1 then 'Root ball planted too deep'
-       when STPDV.PLANTINGHIGH = 1 then 'Root ball planted too high'
-       when STPDV.SOILRETENTIONRING = 1 then 'Deficient soil water retention ring'
-       when STPDV.BURLAPWIREROPE = 1 then 'Exposed burlap, wire or rope not removed'
-       when STPDV.BEDPREPARATIONDIAMETER = 1 then 'Deficient diameter of bed preparation area'
-       when STPDV.BEDPREPARATIONSOD = 1 then 'Sod remains on site/within bed preparation area'
-       when STPDV.BEDPREPARATIONCULTIVATION = 1 then 'Deficient soil cultivation'
-       when STPDV.BEDPREPARATIONCULTIVATIONDEPTH = 1 then 'Deficient soil cultivation depth'
-       when STPDV.MULCHDEPTH = 1 then 'Deficient depth of mulch'
-       when STPDV.MULCHDIAMETER = 1 then 'Deficient mulch diameter'
-       when STPDV.MULCHRING = 1 then 'Deficient mulch retention ring'
-       when STPDV.MULCHSTEM = 1 then 'Mulch too close to the stem'
-       when STPDV.STEMCROWNROPE = 1 then 'Stem/crown rope and/or ties present'
-       when STPDV.TREEGATORBAG = 1 then 'Missing gator bag'
-       when STPDV.TREEGUARD = 1 then 'Missing tree guard'
-       when STPDV.PRUNING = 1 then 'Crown requires pruning'
-       when STPDV.STAKING = 1 then 'Staking required'
-       end as "DEF",
-    
-       case
-       when STPDV.CROWNDIEBACK = 1 or
-       STPDV.CROWNINSECTDISEASE = 1 or
-       STPDV.EPICORMICBRANCHING = 1 or
-       STPDV.BRANCHINGSTRUCTURE = 1 or
-       STPDV.ROOTBALLSIZE = 1  or
-       STPDV.ROOTBALLLOOSE = 1 or
-       STPDV.GIRDLINGROOTS = 1 or
-       STPDV.STEMINSECTDISEASE = 1 or
-       STPDV.STEMTISSUENECROSIS = 1 or
-       STPDV.STEMSCARS = 1 or
-       STPDV.GIRDLEDSTEM = 1 then 'Replace Tree'
-       -- all above need tree replacement
-       when STPDV.PLANTINGHOLESIZE = 1 then 'Increase diameter of planting hole'
-       when STPDV.BACKFILL = 1 then 'Tamp backfill to eliminate air pockets'
-       when STPDV.PLANTINGLOW = 1 then 'Raise tree so root collar 5 - 10 cm above grade'
-       when STPDV.PLANTINGHIGH = 1 then 'Lower tree so root collar 5 - 10 cm above grade'
-       when STPDV.SOILRETENTIONRING = 1 then 'Add/correct soil water retention ring'
-       when STPDV.BURLAPWIREROPE = 1 then 'Remove burlap, wire and/or rope'
-       when STPDV.BEDPREPARATIONDIAMETER = 1 then 'Increase diameter of bed preparation area'
-       when STPDV.BEDPREPARATIONSOD = 1 then 'Remove sod from bed preparation area'
-       when STPDV.BEDPREPARATIONCULTIVATION = 1 then 'Cultivate bed preparation area'
-       when STPDV.BEDPREPARATIONCULTIVATIONDEPTH = 1 then 'Increase depth of cultivation'
-       when STPDV.MULCHDEPTH = 1 then 'Increase depth of mulch'
-       when STPDV.MULCHDIAMETER = 1 then 'Increase diameter of mulch'
-       when STPDV.MULCHRING = 1 then 'Add/correct mulch water retention ring'
-       when STPDV.MULCHSTEM = 1 then 'Move mulch a minimum of 5 cm away from stem'
-       when STPDV.STEMCROWNROPE = 1 then 'Remove rope and/or ties from tree crown'
-       when STPDV.TREEGATORBAG = 1 then 'Install TreeGator bag'
-       when STPDV.TREEGUARD = 1 then 'Install tree guard'
-       when STPDV.PRUNING = 1 then 'Prune crown to remove dead, diseased or broken branches'
-       when STPDV.STAKING = 1 then 'Stake leaning or loose tree, correct inproper staking'
-       end as "REP"
-       from STP_DEFICIENCY_V STPDV
-     ) d on STPDV.TREEID = d.TREEID
-     where STPDV.CONTRACTYEAR = p_year 
-     and d.DEF is not null; 
+      select distinct 
+              s.TREEID as "TID",
+              s.STOCK_TYPE ||' - '|| s.PLANT_TYPE ||' - '|| t.SPECIES as "ITEM",
+              t.CURRENTTREEHEALTH as "HEL",
+              t.SIDEOFSTREET as "RD",
+              s.CONTRACTITEM as "CON",
+              t.MUNICIPALITY as "MUN",
+              s.DEFICIENCY as "DEF"          
+       from (
+        select * from
+        STP_DEFICIENCY_V 
+       )  
+       UNPIVOT include nulls(
+        MATCH
+        for DEFICIENCY
+        IN (CROWNDIEBACK, CROWNINSECTDISEASE, EPICORMICBRANCHING, BRANCHINGSTRUCTURE,
+        ROOTBALLSIZE, ROOTBALLLOOSE, GIRDLINGROOTS, STEMINSECTDISEASE, STEMTISSUENECROSIS,
+        STEMSCARS, GIRDLEDSTEM, PLANTINGHOLESIZE, BACKFILL, PLANTINGLOW, PLANTINGHIGH,
+        SOILRETENTIONRING, BURLAPWIREROPE, BEDPREPARATIONDIAMETER, BEDPREPARATIONSOD,
+        BEDPREPARATIONCULTIVATION, BEDPREPARATIONCULTIVATIONDEPTH, MULCHDEPTH, MULCHDIAMETER,
+        MULCHRING, MULCHSTEM, STEMCROWNROPE, TREEGATORBAG, TREEGUARD, PRUNING, STAKING, 
+        EXTRATREE, INCORRECTLOCATION, UNAPPROVEDSPECIES, INCORRECTSIZE, MISSINGTREE)
+       ) s
+       join transd.fsttree@etrans t on s.TREEID = t.TREEID
+       where MATCH = 1
+       and s.OBJECTID = (select max(OBJECTID) from STP_DEFICIENCY_V
+       where TREEID = s.TREEID)
+       and s.CONTRACTOPERATION = 1 and s.activity_type_id<>2
+       and s.CONTRACTYEAR = p_year
+       order by s.TREEID
+     ) d on STPDV.TREEID = d.TID
+     where STPDV.CONTRACTYEAR = p_year; 
     end;
+    
+    /**********************************************************************
+    /*
+    /* @procedure: delete_snapshot
+    /*
+    /* @description: deletes the currently selected snapshot
+    /*
+    /* @type p_snap In number - the snapshot version number to be deleted
+    /*
+    /**********************************************************************/ 
     
     procedure delete_snapshot(p_snap in number)
     as
@@ -163,6 +153,7 @@ create or replace package body                                                  
       commit;
     end;
     
+    -- won't comment for now, moving to aop_factory eventually
     function AOP_payment_report return varchar2
     as
     l_return clob;
@@ -192,24 +183,15 @@ contracts as (
     from STP_DEFICIENCY_V STPDV
     left join STP_CONTRACT_ITEM STPCI on to_number(STPDV.CONTRACTITEM) = STPCI.ITEM_NUM and STPDV.CONTRACTYEAR = STPCI.YEAR
     where STPDV.CONTRACTYEAR = :P0_YEAR
-)/*,
-
-totals as (
-select STPDV.STOCK_TYPE ||'-'|| STPDV.PLANT_TYPE ||'-'|| TTREE.SPECIES as "NAME",
-    count(STPDV.STOCK_TYPE ||'-'|| STPDV.PLANT_TYPE ||'-'|| TTREE.SPECIES) as "GT"
-    from STP_DEFICIENCY_V STPDV 
-    join transd.fsttree@etrans TTREE on STPDV.TREEID = TTREE.TREEID
-    left join STP_PAYMENT_ITEMS STPPI on STPDV.TREEID = STPPI.TREEID
-    where STPDV.CONTRACTYEAR = :P0_YEAR and
-    (case when (:P86_PRINT = 'c' and STPPI.PAYMENT_STATUS = 1 ) then 1
-                     when (:P86_PRINT<>'c' and STPPI.PAYMENT_CERT_NO = to_number(:P86_PRINT)) then 1
-                     else 0 end) = 1
-    group by STPDV.STOCK_TYPE ||'-'|| STPDV.PLANT_TYPE ||'-'|| TTREE.SPECIES
-)*/
+)
 
 select null as "filename",
 cursor(
-  select distinct cursor(
+  select
+  SYSDATE as "DAT",
+  :P0_YEAR as "YR",
+  :P0_CONTRACTNUMBER as "CONNUM",
+  cursor(
     select distinct cp.PROGRAM as "PROGRAM", :P86_PRINT as "PAY_CERT",
     cursor(
           select 
@@ -325,7 +307,7 @@ cursor(
                      else 0 end) = 1 
                  group by STPDV.STOCK_TYPE, STPDV.PLANT_TYPE, TTREE.SPECIES, stpp.unit_price
   )
-  group by top.program
+  group by :P0_YEAR
 ) "data"
 from dual
       ]';
@@ -333,131 +315,175 @@ from dual
       return l_return;
     end;
     
+    -- won't comment for now, moving to aop_factory eventually
     function AOP_deficiency_list_report(p_snap in number) return varchar2
     as
       l_return clob;
     begin
       if p_snap = 0 then
         l_return := q'[
-          with def as (
-    select 
-       STPDV.TREEID as "TREEID",
-       case
-       when STPDV.CROWNDIEBACK = 1 then 'Crown dieback (<75% crown density)'
-       when STPDV.CROWNINSECTDISEASE = 1 then 'Crown disease/insect'
-       when STPDV.EPICORMICBRANCHING = 1 then 'Epicormic branching'
-       when STPDV.BRANCHINGSTRUCTURE = 1 then 'Poor branching structure'
-       when STPDV.ROOTBALLSIZE = 1 then 'Root ball size too small'
-       when STPDV.ROOTBALLLOOSE = 1 then 'Stem loose in root ball'
-       when STPDV.GIRDLINGROOTS = 1 then 'Root ball and/or roots damage'
-       when STPDV.STEMINSECTDISEASE = 1 then 'Stem insect/disease'
-       when STPDV.STEMTISSUENECROSIS = 1 then 'Stem tissue necrosis'
-       when STPDV.STEMSCARS = 1 then 'Stem scars'
-       when STPDV.GIRDLEDSTEM = 1 then 'Girdled stem'
-       -- all above need tree replacement
-       when STPDV.PLANTINGHOLESIZE = 1 then 'Planting hole incorrect size'
-       when STPDV.BACKFILL = 1 then 'Insufficient soil tamping / air pockets present'
-       when STPDV.PLANTINGLOW = 1 then 'Root ball planted too deep'
-       when STPDV.PLANTINGHIGH = 1 then 'Root ball planted too high'
-       when STPDV.SOILRETENTIONRING = 1 then 'Deficient soil water retention ring'
-       when STPDV.BURLAPWIREROPE = 1 then 'Exposed burlap, wire or rope not removed'
-       when STPDV.BEDPREPARATIONDIAMETER = 1 then 'Deficient diameter of bed preparation area'
-       when STPDV.BEDPREPARATIONSOD = 1 then 'Sod remains on site/within bed preparation area'
-       when STPDV.BEDPREPARATIONCULTIVATION = 1 then 'Deficient soil cultivation'
-       when STPDV.BEDPREPARATIONCULTIVATIONDEPTH = 1 then 'Deficient soil cultivation depth'
-       when STPDV.MULCHDEPTH = 1 then 'Deficient depth of mulch'
-       when STPDV.MULCHDIAMETER = 1 then 'Deficient mulch diameter'
-       when STPDV.MULCHRING = 1 then 'Deficient mulch retention ring'
-       when STPDV.MULCHSTEM = 1 then 'Mulch too close to the stem'
-       when STPDV.STEMCROWNROPE = 1 then 'Stem/crown rope and/or ties present'
-       when STPDV.TREEGATORBAG = 1 then 'Missing gator bag'
-       when STPDV.TREEGUARD = 1 then 'Missing tree guard'
-       when STPDV.PRUNING = 1 then 'Crown requires pruning'
-       when STPDV.STAKING = 1 then 'Staking required'
-       end as "DEF",
-    
-       case
-       when STPDV.CROWNDIEBACK = 1 or
-       STPDV.CROWNINSECTDISEASE = 1 or
-       STPDV.EPICORMICBRANCHING = 1 or
-       STPDV.BRANCHINGSTRUCTURE = 1 or
-       STPDV.ROOTBALLSIZE = 1  or
-       STPDV.ROOTBALLLOOSE = 1 or
-       STPDV.GIRDLINGROOTS = 1 or
-       STPDV.STEMINSECTDISEASE = 1 or
-       STPDV.STEMTISSUENECROSIS = 1 or
-       STPDV.STEMSCARS = 1 or
-       STPDV.GIRDLEDSTEM = 1 then 'Replace Tree'
-       -- all above need tree replacement
-       when STPDV.PLANTINGHOLESIZE = 1 then 'Increase diameter of planting hole'
-       when STPDV.BACKFILL = 1 then 'Tamp backfill to eliminate air pockets'
-       when STPDV.PLANTINGLOW = 1 then 'Raise tree so root collar 5 - 10 cm above grade'
-       when STPDV.PLANTINGHIGH = 1 then 'Lower tree so root collar 5 - 10 cm above grade'
-       when STPDV.SOILRETENTIONRING = 1 then 'Add/correct soil water retention ring'
-       when STPDV.BURLAPWIREROPE = 1 then 'Remove burlap, wire and/or rope'
-       when STPDV.BEDPREPARATIONDIAMETER = 1 then 'Increase diameter of bed preparation area'
-       when STPDV.BEDPREPARATIONSOD = 1 then 'Remove sod from bed preparation area'
-       when STPDV.BEDPREPARATIONCULTIVATION = 1 then 'Cultivate bed preparation area'
-       when STPDV.BEDPREPARATIONCULTIVATIONDEPTH = 1 then 'Increase depth of cultivation'
-       when STPDV.MULCHDEPTH = 1 then 'Increase depth of mulch'
-       when STPDV.MULCHDIAMETER = 1 then 'Increase diameter of mulch'
-       when STPDV.MULCHRING = 1 then 'Add/correct mulch water retention ring'
-       when STPDV.MULCHSTEM = 1 then 'Move mulch a minimum of 5 cm away from stem'
-       when STPDV.STEMCROWNROPE = 1 then 'Remove rope and/or ties from tree crown'
-       when STPDV.TREEGATORBAG = 1 then 'Install TreeGator bag'
-       when STPDV.TREEGUARD = 1 then 'Install tree guard'
-       when STPDV.PRUNING = 1 then 'Prune crown to remove dead, diseased or broken branches'
-       when STPDV.STAKING = 1 then 'Stake leaning or loose tree, correct inproper staking'
-       end as "REP"
-       from STP_DEFICIENCY_V STPDV 
+          with def as(       
+       select distinct 
+              s.TREEID as "TID",
+              s.TAGNUMBER as "TNO",
+              s.STOCK_TYPE ||' - '|| s.PLANT_TYPE ||' - '|| t.SPECIES as "ITEM",
+              t.CURRENTHEALTH as "HEL",
+              t.ROADSIDE as "RD",
+              :P0_YEAR ||' -'|| to_char(s.CONTRACTITEM, '000') as "CON",
+              t.MUNICIPALITY as "MUN",
+              s.DEFICIENCY as "DEF"          
+       from (
+        select * from
+        STP_DEFICIENCY_V 
+       )  
+       UNPIVOT include nulls(
+        MATCH
+        for DEFICIENCY
+        IN (CROWNDIEBACK, CROWNINSECTDISEASE, EPICORMICBRANCHING, BRANCHINGSTRUCTURE,
+        ROOTBALLSIZE, ROOTBALLLOOSE, GIRDLINGROOTS, STEMINSECTDISEASE, STEMTISSUENECROSIS,
+        STEMSCARS, GIRDLEDSTEM, PLANTINGHOLESIZE, BACKFILL, PLANTINGLOW, PLANTINGHIGH,
+        SOILRETENTIONRING, BURLAPWIREROPE, BEDPREPARATIONDIAMETER, BEDPREPARATIONSOD,
+        BEDPREPARATIONCULTIVATION, BEDPREPARATIONCULTIVATIONDEPTH, MULCHDEPTH, MULCHDIAMETER,
+        MULCHRING, MULCHSTEM, STEMCROWNROPE, TREEGATORBAG, TREEGUARD, PRUNING, STAKING, 
+        EXTRATREE, INCORRECTLOCATION, UNAPPROVEDSPECIES, INCORRECTSIZE, MISSINGTREE)
+       ) s
+       join STP_TREE_LOCATION_V t on s.TREEID = t.TREEID
+       where MATCH = 1
+       and s.OBJECTID = (select max(OBJECTID) from STP_DEFICIENCY_V
+       where TREEID = s.TREEID)
+       and s.CONTRACTOPERATION = 1 and s.activity_type_id<>2
+       and s.CONTRACTYEAR = :P0_YEAR
+       and t.STATUS = 'Active'
+       order by s.TREEID
+),
+
+items as(
+  select d.TID as "TID",
+       d.TNO as "TNO",
+       d.ITEM as "ITEM",
+       d.HEL as "HEL",
+       d.RD as "RD",
+       d.CON as "CON",
+       MUN as "MUN",
+case d.DEF 
+when 'CROWNDIEBACK' then 'Crown dieback (<75% crown density)'
+when 'CROWNINSECTDISEASE' then 'Crown disease/insect'
+when 'EPICORMICBRANCHING' then 'Epicormic branching'
+when 'BRANCHINGSTRUCTURE' then 'Poor branching structure'
+when 'ROOTBALLSIZE' then 'Root ball size too small'
+when 'ROOTBALLLOOSE' then 'Stem loose in root ball'
+when 'GIRDLINGROOTS' then 'Root ball and/or roots damage'
+when 'STEMINSECTDISEASE' then 'Stem insect/disease'
+when 'STEMTISSUENECROSIS' then 'Stem tissue necrosis'
+when 'STEMSCARS' then 'Stem scars'
+when 'GIRDLEDSTEM' then 'Girdled stem'
+when 'PLANTINGHOLESIZE' then 'Planting hole incorrect size'
+when 'BACKFILL' then 'Insufficient soil tamping / air pockets present'
+when 'PLANTINGLOW' then 'Root ball planted too deep'
+when 'PLANTINGHIGH' then 'Root ball planted too high'
+when 'SOILRETENTIONRING' then 'Deficient soil water retention ring'
+when 'BURLAPWIREROPE' then 'Exposed burlap, wire or rope not removed'
+when 'BEDPREPARATIONDIAMETER' then 'Deficient diameter of bed preparation area'
+when 'BEDPREPARATIONSOD' then 'Sod remains on site/within bed preparation area'
+when 'BEDPREPARATIONCULTIVATION' then 'Deficient soil cultivation'
+when 'BEDPREPARATIONCULTIVATIONDEPTH' then 'Deficient soil cultivation depth'
+when 'MULCHDEPTH' then 'Deficient depth of mulch'
+when 'MULCHDIAMETER' then 'Deficient mulch diameter'
+when 'MULCHRING' then 'Deficient mulch retention ring'
+when 'MULCHSTEM' then 'Mulch too close to the stem'
+when 'STEMCROWNROPE' then 'Stem/crown rope and/or ties present'
+when 'TREEGATORBAG' then 'Missing gator bag'
+when 'TREEGUARD' then 'Missing tree guard'
+when 'PRUNING' then 'Crown requires pruning'
+when 'STAKING' then 'Staking required'
+when 'EXTRATREE' then 'Extra tree not required'
+when 'INCORRECTLOCATION' then 'Transplant Tree to Correct Location'
+when 'UNAPPROVEDSPECIES' then 'Unapproved Species Substitution'
+when 'INCORRECTSIZE' then 'Incorrect Tree Size'
+when 'MISSINGTREE' then 'Missing Tree'
+end as "DEF",
+case d.DEF
+when 'CROWNDIEBACK' then 'Replace Tree'
+when 'CROWNINSECTDISEASE' then 'Replace Tree'
+when 'EPICORMICBRANCHING' then 'Replace Tree'
+when 'BRANCHINGSTRUCTURE' then 'Replace Tree'
+when 'ROOTBALLSIZE' then 'Replace Tree'
+when 'ROOTBALLLOOSE' then 'Replace Tree'
+when 'GIRDLINGROOTS' then 'Replace Tree'
+when 'STEMINSECTDISEASE' then 'Replace Tree'
+when 'STEMTISSUENECROSIS' then 'Replace Tree'
+when 'STEMSCARS' then 'Replace Tree'
+when 'GIRDLEDSTEM' then 'Replace Tree'
+when 'PLANTINGHOLESIZE' then 'Increase diameter of planting hole'
+when 'BACKFILL' then 'Tamp backfill to eliminate air pockets'
+when 'PLANTINGLOW' then 'Raise tree so root collar 5 - 10 cm above grade'
+when 'PLANTINGHIGH' then 'Lower tree so root collar 5 - 10 cm above grade'
+when 'SOILRETENTIONRING' then 'Add/correct soil water retention ring'
+when 'BURLAPWIREROPE' then 'Remove burlap, wire and/or rope'
+when 'BEDPREPARATIONDIAMETER' then 'Increase diameter of bed preparation area'
+when 'BEDPREPARATIONSOD' then 'Remove sod from bed preparation area'
+when 'BEDPREPARATIONCULTIVATION' then 'Cultivate bed preparation area'
+when 'BEDPREPARATIONCULTIVATIONDEPTH' then 'Increase depth of cultivation'
+when 'MULCHDEPTH' then 'Increase depth of mulch'
+when 'MULCHDIAMETER' then 'Increase diameter of mulch'
+when 'MULCHRING' then 'Add/correct mulch water retention ring'
+when 'MULCHSTEM' then 'Move mulch a minimum of 5 cm away from stem'
+when 'STEMCROWNROPE' then 'Remove rope and/or ties from tree crown'
+when 'TREEGATORBAG' then 'Install TreeGator bag'
+when 'TREEGUARD' then 'Install tree guard'
+when 'PRUNING' then 'Prune crown to remove dead, diseased or broken branches'
+when 'STAKING' then 'Stake leaning or loose tree, correct inproper staking'
+when 'EXTRATREE' then 'Remove Extra Tree and Restore Site'
+when 'INCORRECTLOCATION' then 'Transplant Tree to Correct Location'
+when 'UNAPPROVEDSPECIES' then 'Replace Tree'
+when 'INCORRECTSIZE' then 'Replace Tree'
+when 'MISSINGTREE' then 'Replace Tree'
+end as "REP"
+from DEF d
 )
 
 select null as "filename",
 cursor(
   select 
+  SYSDATE as "DAT",
+  :P0_YEAR as "YR",
+  :P0_CONTRACTNUMBER as "CONNUM",
   cursor( 
-    select TTREE.MUNICIPALITY as "MUN", 
-    :P0_YEAR ||' - '|| to_char(STPDV.CONTRACTITEM, '000') as "CON", 
-    TTREE.ROADSIDE as "RD",
+    select ii.MUN as "MUN", 
+    ii.CON as "CON", 
+    ii.RD as "RD",
     cursor(
-       select distinct s.TREEID as "TID",
-       s.TAGNUMBER as "TNO",
-       s.STOCK_TYPE ||'-'|| s.PLANT_TYPE ||'-'|| t.SPECIES as "ITEM",
-       t.CURRENTHEALTH as "HEL",
-       d.DEF as "DEF", 
-       d.REP as "REP"
-       from STP_DEFICIENCY_V s
-       join def d on d.TREEID = s.TREEID
-       join STP_TREE_LOCATION_V t on s.TREEID = t.TREEID
-       where s.CONTRACTYEAR = :P0_YEAR and d.DEF is not null
-       and convert(t.MUNICIPALITY, 'AL16UTF16', 'AL32UTF8') = TTREE.MUNICIPALITY
-       and convert(s.CONTRACTITEM, 'AL16UTF16', 'AL32UTF8') = STPDV.CONTRACTITEM
-       and convert(t.ROADSIDE, 'AL16UTF16', 'AL32UTF8') = TTREE.ROADSIDE
-       order by s.TREEID asc
+       select distinct i.TID as "TID",
+       i.TNO as "TNO",
+       i.ITEM as "ITEM",
+       i.HEL as "HEL",
+       i.DEF as "DEF", 
+       i.REP as "REP"
+       from items i
+       where convert(i.MUN, 'AL16UTF16', 'AL32UTF8') = ii.MUN
+       and i.CON = ii.CON
+       and convert(i.RD, 'AL16UTF16', 'AL32UTF8') = ii.RD
     ) "ITEMS"
-    from STP_DEFICIENCY_V STPDV 
-    join def d on d.TREEID = STPDV.TREEID
-    join STP_TREE_LOCATION_V TTREE on STPDV.TREEID = TTREE.TREEID
+    from items ii 
     where exists(
-      select distinct s.TREEID as "TID",
-       s.TAGNUMBER as "TNO",
-       s.STOCK_TYPE ||'-'|| s.PLANT_TYPE ||'-'|| t.SPECIES as "ITEM",
-       t.CURRENTHEALTH as "HEL",
-       d.DEF as "DEF", 
-       d.REP as "REP"
-       from STP_DEFICIENCY_V s
-       join def d on d.TREEID = s.TREEID
-       join STP_TREE_LOCATION_V t on s.TREEID = t.TREEID
-       where s.CONTRACTYEAR = :P0_YEAR and d.DEF is not null
-       and t.MUNICIPALITY = TTREE.MUNICIPALITY
-       and s.CONTRACTITEM = STPDV.CONTRACTITEM
-       and t.ROADSIDE = TTREE.ROADSIDE)
-    group by TTREE.MUNICIPALITY, STPDV.CONTRACTITEM, TTREE.ROADSIDE
-    order by TTREE.MUNICIPALITY, to_number(STPDV.CONTRACTITEM), TTREE.ROADSIDE
+      select distinct i.TID as "TID",
+       i.TNO as "TNO",
+       i.ITEM as "ITEM",
+       i.HEL as "HEL",
+       i.DEF as "DEF", 
+       i.REP as "REP"
+       from items i
+       where i.MUN = ii.MUN
+       and i.CON = ii.CON
+       and i.RD = ii.RD
+    )
+    group by ii.MUN, ii.CON, ii.RD
+    order by ii.MUN, ii.CON, ii.RD
   ) "OUTER"
   from dual
+  group by :P0_YEAR
 ) "data"
-from dual  
+from dual   
         ]';
         
         else
@@ -465,6 +491,9 @@ from dual
           select null as "filename",
 cursor(
   select 
+  SYSDATE as "DAT",
+  :P0_YEAR as "YR",
+  :P0_CONTRACTNUMBER as "CONNUM",
   cursor( 
     select s.MUNICIPALITY as "MUN", 
     :P0_YEAR ||' - '|| to_char(s.CONTRACTITEM, '000') as "CON", 
@@ -501,6 +530,7 @@ cursor(
     order by 1,2,3
   ) "OUTER"
   from dual
+  group by :P0_YEAR
 ) "data"
 from dual 
         ]';
