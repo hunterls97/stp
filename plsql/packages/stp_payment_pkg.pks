@@ -1,4 +1,4 @@
-create or replace package                                                                                     stp_payment_pkg as
+create or replace package                                                                                                             stp_payment_pkg as
 
 /**********************************************************************
 /*
@@ -12,7 +12,7 @@ create or replace package                                                       
 
 procedure process_checked_fields;
 
-procedure process_payment;
+procedure process_payment(p_year in number);
 
 procedure create_deficiency_snapshot(p_year in number);
 

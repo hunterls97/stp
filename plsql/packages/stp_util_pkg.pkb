@@ -1,82 +1,20 @@
-create or replace package body                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 stp_util_pkg as
- 
-    FUNCTION GET_CONTRACT_NUM(P_YEAR IN NUMBER) RETURN VARCHAR2
-    AS
-      l_result varchar2(100);
-    BEGIN
-      SELECT CONTRACTNUMBER INTO l_result 
-      FROM "TRANSD"."FSTCONTRACTNUMBER"@ETRANS.YKREGION.CA FCN
-      where SUBSTR(FCN.CONTRACTNUMBER, 3, 2) = P_YEAR - 2000;
-      
-      RETURN l_result;
+create or replace package body             stp_util_pkg as
 
-    EXCEPTION
-      WHEN OTHERS THEN
-        RETURN NULL;
-    END; 
- 
-    
-
-    /* ---------------- < Get Watering amount > ---------------- */
-    FUNCTION GET_WATERING_AMOUNT( p_year   IN NUMBER )RETURN number
-    IS
-      l_number NUMBER;
-    BEGIN
-    /*
-      select NVL(SUM(QUANTITY),0) INTO l_number from bsmart_Data.stp_items_v where year=p_year and type = 'Tree Planting';
-      return l_number*14;
-      */
-      return 0;
-    END;
- 
-
-  /* Send Locking Notification 
-  PROCEDURE send_lock_notification( p_year IN NUMBER, p_comments IN VARCHAR2 DEFAULT NULL)
-  AS
-    cursor c_creator is
-    SELECT DISTINCT CREATED_BY AS creator FROM stp_contract_item WHERE YEAR = p_year;
-
-    cursor c_items (p_creator VARCHAR2 ) is 
-    select ID, contract_item_num
-    from stp_contract_item
-    where CREATED_BY = p_creator and STATUS_ID = 2;
-
-    l_template varchar2(300);
-    l_body clob;
-  BEGIN
-    for rec in c_creator
-    
-    LOOP
-      l_body :=  STP_CONSTANT_PKG.GC_EM_LOCK_HEADER;
-
-      IF p_comments IS NOT NULL THEN
-        l_body := l_body || '<b>Comments:</b><br>' || p_comments || '<br>';
-      END IF; 
-
-      for item in c_items (rec.creator) 
-      LOOP
-        l_template := STP_CONSTANT_PKG.GC_EM_LOCK_ITEM;
-        l_template :=  REPLACE(l_template, '{ITEM_ID}', TO_CHAR(item.id));
-        l_template :=  REPLACE(l_template, '{ITEM_NUM}', TO_CHAR(item.contract_item_num));
-        l_body := l_body || l_template;
-      END LOOP;
-
-      EMAIL_UTIL_PKG.send_email(ORG_UTIL_PKG.GET_EMAILS(rec.creator),
-                          STP_CONSTANT_PKG.GC_EM_REPLY_ADDRESS,
-                          STP_CONSTANT_PKG.GC_EM_REPLY_NAME,
-                          STP_CONSTANT_PKG.GC_EM_LOCK_TITLE,
-                          l_body);
-    END LOOP; 
-  END;
-  */
- 
-  PROCEDURE LOAD_COMMENT_COLLECTION( P_ITEM_ID IN NUMBER)
+  /************************************************************************************************
+  /*
+  /* @procedure: load_comment_collection
+  /*
+  /* @description: truncate the collection and load comments data into collection with
+  /*               name COMMENT_COLLECTION_NAME.
+  /*
+  /* @type P_ITEM_ID In Number - the item id of the comments belong to.
+  /************************************************************************************************/ 
+  PROCEDURE load_comment_collection( P_ITEM_ID IN NUMBER)
   AS
   BEGIN
 
     
     APEX_COLLECTION.CREATE_OR_TRUNCATE_COLLECTION (COMMENT_COLLECTION_NAME);
-    
     
     for rec in (SELECT
                 C."ID" "ID",
@@ -90,7 +28,6 @@ create or replace package body                                                  
                 WHERE C.ITEM_ID = P_ITEM_ID
                 ORDER BY 1 DESC,2 DESC)
     loop
-    
         APEX_COLLECTION.ADD_MEMBER(
              p_collection_name => COMMENT_COLLECTION_NAME
             ,p_c001 => rec."TIME"
@@ -102,7 +39,16 @@ create or replace package body                                                  
     end loop;
   END;
   
-  PROCEDURE PROCESS_COMMENT_COLLECTION( P_ITEM_ID IN NUMBER)
+
+  /************************************************************************************************
+  /*
+  /* @procedure: process_comment_collection
+  /*
+  /* @description: Load the comments data from collection back into table.
+  /*
+  /* @type P_ITEM_ID In Number - the item id of the comments belong to.
+  /************************************************************************************************/ 
+  PROCEDURE process_comment_collection( P_ITEM_ID IN NUMBER)
   AS
     l_comment_id number;
   BEGIN
@@ -123,7 +69,19 @@ create or replace package body                                                  
 
   END;
 
-  FUNCTION LOAD_PARAMETER( P_TYPE IN NUMBER,
+
+  /************************************************************************************************
+  /*
+  /* @function: load_parameter
+  /*
+  /* @description: map the numeric id back to the value in the given domain type.
+  /*
+  /* @type P_TYPE In Number - dpmain type.
+  /* @type P_ID   In Number - numeric id in domain.
+  /*
+  /* @rtype Varchar2 - domain value based on domain type and numeric id.
+  /************************************************************************************************/ 
+  FUNCTION load_parameter( P_TYPE IN NUMBER,
                            P_ID   IN NUMBER) RETURN VARCHAR2
 AS
     l_result varchar2(128);
@@ -150,7 +108,19 @@ AS
   END;
   
   
-  FUNCTION GET_DOMAIN_JSON (P_LAYERID IN NUMBER) RETURN VARCHAR2
+  /************************************************************************************************
+  /*
+  /* @function: get_domain_json
+  /*
+  /* @description: Get the domain json object from eTrans tables.
+  /*
+  /* @type P_LAYERID In Number - layer ID defined in eTrans Restful API.
+  /*
+  /* @rtype Varchar2 - domain json object.
+  /*
+  /* @note: In case of the API stop working, contact Bryan Bingham <Bryan.Bingham@york.ca>.
+  /************************************************************************************************/   
+  FUNCTION get_domain_json (P_LAYERID IN NUMBER) RETURN VARCHAR2
   AS
     l_http_request    UTL_HTTP.req;
     l_http_response   UTL_HTTP.resp;
@@ -158,7 +128,7 @@ AS
     BEGIN
     -- preparing request
     l_http_request :=
-      UTL_HTTP.begin_request ('http://ykr-geo-cw4/arcgis/rest/services/Cityworks/CWForestry_etransprd/MapServer/' || TO_CHAR(P_LAYERID) ||'?f=json',
+      UTL_HTTP.begin_request (REPLACE(ETRANS_RESTFUL_URL, '%LAYER_ID%', TO_CHAR(P_LAYERID)),
                               'GET',
                               'HTTP/1.1');
     
@@ -178,7 +148,7 @@ AS
    
    /**********************************************************************
    /*
-   /* @function: GET_AOP_QUERY
+   /* @function: get_aop_query
    /*
    /* @description: Gets the aop query based on a given id
    /*
@@ -186,7 +156,7 @@ AS
    /*
    /* @rtype clob - the returned query
    /**********************************************************************/ 
-   FUNCTION GET_AOP_QUERY(P_ID IN NUMBER) RETURN VARCHAR2
+   FUNCTION get_aop_query(P_ID IN NUMBER) RETURN VARCHAR2
    AS
     l_return clob;
     l_cont number := 0;
@@ -198,7 +168,12 @@ AS
    END;
    
    
-   /* Procedure for daily scheduled job to update materialized view. */
+  /************************************************************************************************
+  /*
+  /* @procedure: update_mv
+  /*
+  /* @description: Procedure for scheduled job to update materialzied domain lookup tables. 
+  /************************************************************************************************/ 
    PROCEDURE UPDATE_MV
    AS
    BEGIN

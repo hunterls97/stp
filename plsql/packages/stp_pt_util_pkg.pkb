@@ -1,5 +1,4 @@
-CREATE OR REPLACE
-PACKAGE BODY STP_PT_UTIL_PKG AS
+create or replace PACKAGE BODY             STP_PT_UTIL_PKG AS
 
 
    
@@ -21,7 +20,7 @@ PACKAGE BODY STP_PT_UTIL_PKG AS
   begin
       -- Load template
       select * into l_template
-      from stp_email_template where id =  d;
+      from stp_email_template where id = gc_email_noti_template_id;
 
       -- Load Extra Data
       select description into l_status

@@ -1,6 +1,14 @@
-create or replace package stp_ni_util_pkg as 
+create or replace package             stp_ni_util_pkg as 
   
-  /* Pacakge for nursery inspection. */
+  /************************************************************************************************
+  /*
+  /* @file_name: stp_ni_util_pkg.pks
+  /* @author: Gary Kang
+  /*  
+  /* @description: Common utility functions for STP application - Nursery Inspection.
+  /*
+  /************************************************************************************************/ 
+
 
   function validate_data_range return boolean;
   

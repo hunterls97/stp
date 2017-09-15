@@ -1,5 +1,14 @@
 create or replace PACKAGE             STP_WI_UTIL_PKG AS 
 
+    /************************************************************************************************
+    /*
+    /* @file_name: STP_WI_UTIL_PKG.pks
+    /* @author: Gary Kang
+    /*  
+    /* @description: Warrenty Inspection utility functions for STP applications
+    /*
+    /************************************************************************************************/ 
+    
     procedure process_form (p_id in stp_wrnty_inspection.id%type,
                             p_contract_year in stp_wrnty_inspection.contract_year%type,
                             p_contract_item_num in stp_wrnty_inspection.contract_item_num%type,

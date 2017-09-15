@@ -1,5 +1,5 @@
-create or replace package body                                                                                     STP_CR_UTIL_PKG as 
-
+create or replace package body                                                                                                                                                             STP_CR_UTIL_PKG as 
+ 
     procedure email_notification(p_year in stp_deficiency_v.contractyear%type,
                              p_contract_item_num in stp_deficiency_v.contractitem%type,
                              p_def_stat in stp_contractor_repairs.deficiency_status%type, 
@@ -10,9 +10,7 @@ create or replace package body                                                  
                              p_loc in varchar2)
     as
       l_template stp_email_template%rowtype;
-    begin
-      sys.dbms_output.put_line('test');
-      
+    begin   
       select * into l_template
       from stp_email_template where id = 2;
       
@@ -36,7 +34,7 @@ create or replace package body                                                  
       l_template.template := REPLACE(l_template.template, '##RepairInspectionStatus##', p_inspect_stat);
       l_template.template := REPLACE(l_template.template, '##Location##', p_loc);
       
-      email_util_pkg.send_email(p_to => 'hunter.schofield@york.ca',--org_util_pkg.get_emails(p_inspector)),
+      email_util_pkg.send_email(p_to => 'hunter.schofield@york.ca' ||';'|| 'gary.kang@york.ca',--org_util_pkg.get_emails(p_inspector)),
                                 p_from_address => 'hunter.schofield@york.ca',
                                 p_from_name => 'Street Tree Planting and Establishment Contract Administration System',
                                 p_subject => l_template.subject,
